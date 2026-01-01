@@ -1,7 +1,7 @@
 # Jarfix
 Jarfix fixes the `.jar` file association so Java applications can run correctly. When you double-click a `.jar` file, Windows must know which Java runtime to use.
 
-This program is similar to [Johann Löfflmann's original Jarfix](https://johann.loefflmann.net/en/software/jarfix/index.html), but only selects Java 17 or higher. It searches for an installed Java runtime version 17 or higher. If no suitable version is found, it will download and install Java 21, then set `.jar` files to use that Java.
+This program is similar to [Johann Löfflmann's original Jarfix](https://johann.loefflmann.net/en/software/jarfix/index.html), but it associates `.jar` files with only Java runtime versions 17 or higher. If no suitable version is found, it will download and install Java 21, then set `.jar` files to use that Java runtime.
 
 ## Download
 Go to the [releases](https://github.com/qMaxXen/Jarfix/releases/latest) section and download `Jarfix.exe`.
