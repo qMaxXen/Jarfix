@@ -1,4 +1,8 @@
 # Jarfix
+
+[![GitHub release](https://img.shields.io/github/v/release/qMaxXen/Jarfix?logo=github)](https://github.com/qMaxXen/Jarfix/releases)
+[![GitHub downloads](https://img.shields.io/github/downloads/qMaxXen/Jarfix/total?logo=github)](https://github.com/qMaxXen/Jarfix/releases)
+
 Jarfix is a program that fixes the `.jar` file association so Java applications can run correctly. When you double-click a `.jar` file, Windows must know which Java runtime to use.
 
 This program is similar to [Johann Löfflmann's original Jarfix](https://johann.loefflmann.net/en/software/jarfix/index.html), but it associates `.jar` files with only Java runtime versions 17 or higher. If no suitable version is found, it will download and install Java 21, then set `.jar` files to use that Java runtime.
