@@ -198,7 +198,7 @@ namespace Jarfix.Core
                                 if (m.Success)
                                 {
                                     var p = m.Groups[2].Value.Trim('"');
-                                    if (File.Exists(p) && (p.EndsWith("javaw.exe", StringComparison.OrdinalIgnoreCase) || p.EndsWith("java.exe", StringComparison.OrdinalIgnoreCase)))
+                                    if (File.Exists(p) && p.EndsWith("javaw.exe", StringComparison.OrdinalIgnoreCase))
                                         results.Add(p);
                                     else
                                     {
@@ -217,7 +217,7 @@ namespace Jarfix.Core
                                 if (m2.Success)
                                 {
                                     var p = m2.Groups["p"].Value;
-                                    if (File.Exists(p) && (p.EndsWith("javaw.exe", StringComparison.OrdinalIgnoreCase) || p.EndsWith("java.exe", StringComparison.OrdinalIgnoreCase)))
+                                    if (File.Exists(p) && p.EndsWith("javaw.exe", StringComparison.OrdinalIgnoreCase))
                                         results.Add(p);
                                 }
                             }
@@ -288,16 +288,6 @@ namespace Jarfix.Core
                 {
                     var candidate = Path.Combine(p, "javaw.exe");
                     if (File.Exists(candidate)) list.Add(candidate);
-                }
-                catch { }
-            }
-
-            foreach (var p in parts)
-            {
-                try
-                {
-                    var candidate = Path.Combine(p, "java.exe");
-                    if (File.Exists(candidate) && !list.Contains(candidate)) list.Add(candidate);
                 }
                 catch { }
             }
