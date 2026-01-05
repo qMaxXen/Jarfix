@@ -187,6 +187,13 @@ namespace Jarfix.UI
 
                 jarfixInfoBox.Clear();
 
+                if (lastDetected.Count == 0)
+                {
+                    InfoWarning("No Java runtime found.");
+                    InfoBlankLine();
+                    LogForLog("No Java runtimes detected.");
+                }
+
                 bool onlyOldJava = false;
                 if (lastDetected.Count > 0)
                 {
