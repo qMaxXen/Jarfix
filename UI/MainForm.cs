@@ -30,7 +30,8 @@ namespace Jarfix.UI
         private CancellationTokenSource? downloadCts;
         private StringBuilder runLog = new StringBuilder();
         private const string MicrosoftJdk21Msi = "https://aka.ms/download-jdk/microsoft-jdk-21-windows-x64.msi";
-
+        private const string CurrentVersion = "v1.0.1";
+        private const string LatestReleaseUrl = "https://github.com/qMaxXen/Jarfix/releases/latest";
         public MainForm()
         {
             InitializeComponent();
@@ -108,9 +109,115 @@ namespace Jarfix.UI
         private async void MainForm_Load(object? sender, EventArgs e)
         {
             mainTabs.SelectedTab = tabJarfix;
+            
+            LogForLog($"Jarfix version: {CurrentVersion}");
+            
+            var (isOutdated, latestVersion) = await CheckForUpdatesAsync();
+            
+            if (!string.IsNullOrEmpty(latestVersion))
+            {
+                if (isOutdated)
+                {
+                    LogForLog($"Update available: {latestVersion} (Current: {CurrentVersion})");
+                }
+                else
+                {
+                    LogForLog("Using the latest version.");
+                }
+            }
+            else
+            {
+                LogForLog("Could not check for updates.");
+            }
+            
+            if (isOutdated)
+            {
+                var result = MessageBox.Show(
+                    "You are running an outdated version of Jarfix. Would you like to open the latest release on GitHub?",
+                    "Update Available",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Information,
+                    MessageBoxDefaultButton.Button1
+                );
+                
+                if (result == DialogResult.Yes)
+                {
+                    try
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = LatestReleaseUrl,
+                            UseShellExecute = true
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        LogForLog($"Failed to open update URL: {ex.Message}");
+                    }
+                    Application.Exit();
+                    return;
+                }
+            }
+            
             await RunJarfixFlow();
         }
 
+        private async Task<(bool isOutdated, string latestVersion)> CheckForUpdatesAsync()
+        {
+            try
+            {
+                using var client = new HttpClient();
+                client.DefaultRequestHeaders.Add("User-Agent", "Jarfix");
+                client.Timeout = TimeSpan.FromSeconds(5);
+                
+                var response = await client.GetAsync("https://api.github.com/repos/qMaxXen/Jarfix/releases/latest");
+                if (!response.IsSuccessStatusCode) return (false, "");
+                
+                var json = await response.Content.ReadAsStringAsync();
+                var doc = JsonDocument.Parse(json);
+                
+                if (doc.RootElement.TryGetProperty("tag_name", out var tagProp))
+                {
+                    var latestVersion = tagProp.GetString() ?? "";
+                    var isOutdated = CompareVersions(CurrentVersion, latestVersion) < 0;
+                    return (isOutdated, latestVersion);
+                }
+            }
+            catch
+            {
+            }
+            return (false, "");
+        }
+
+        private int CompareVersions(string current, string latest)
+        {
+            var currentClean = current.TrimStart('v', 'V');
+            var latestClean = latest.TrimStart('v', 'V');
+            
+            var currentParts = currentClean.Split('.');
+            var latestParts = latestClean.Split('.');
+            
+            int maxLength = Math.Max(currentParts.Length, latestParts.Length);
+            
+            for (int i = 0; i < maxLength; i++)
+            {
+                int currentNum = 0;
+                int latestNum = 0;
+                
+                if (i < currentParts.Length)
+                    int.TryParse(currentParts[i], out currentNum);
+                
+                if (i < latestParts.Length)
+                    int.TryParse(latestParts[i], out latestNum);
+                
+                if (currentNum < latestNum)
+                    return -1;
+                else if (currentNum > latestNum)
+                    return 1; 
+            }
+            
+            return 0;
+        }
         private void InfoTitle(string title)
         {
             if (jarfixInfoBox.InvokeRequired)
