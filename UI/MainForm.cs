@@ -334,6 +334,23 @@ namespace Jarfix.UI
                     LogForLog("Only Java 8 or older detected.");
                 }
 
+                bool only32BitJava = false;
+                bool has64BitJava = false;
+                if (lastDetected.Count > 0)
+                {
+                    has64BitJava = lastDetected.Any(r => r.Is64Bit);
+                    only32BitJava = !has64BitJava;
+                }
+
+                if (only32BitJava)
+                {
+                    InfoWarning("You're using 32-bit Java on a 64-bit system.");
+                    InfoWarning("32-bit Java is not recommended. You should use 64-bit Java 17 or higher.");
+                    InfoBlankLine();
+
+                    LogForLog("Only 32-bit Java detected.");
+                }
+
                 JavaRuntime? recommended = SelectPreferredRuntime(lastDetected);
 
                 if (recommended != null && recommended.MajorVersion >= 17)
@@ -432,18 +449,14 @@ namespace Jarfix.UI
         {
             if (runtimes == null || runtimes.Count == 0) return null;
             
-            var r = runtimes.Find(x => x.MajorVersion >= 21);
-            if (r != null) return r;
-            
-            var cand = runtimes.FindAll(x => x.MajorVersion >= 17);
+            var cand = runtimes.FindAll(x => x.MajorVersion >= 17 && x.Is64Bit);
             if (cand.Count > 0)
             {
                 cand.Sort((a, b) => b.MajorVersion.CompareTo(a.MajorVersion));
                 return cand[0];
             }
             
-            runtimes.Sort((a, b) => b.MajorVersion.CompareTo(a.MajorVersion));
-            return runtimes[0];
+            return null;
         }
 
         private void SetBusy(bool busy)
