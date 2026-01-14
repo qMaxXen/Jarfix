@@ -16,6 +16,12 @@ namespace Jarfix.UI
 {
     public class MainForm : Form
     {
+        private enum LogLevel
+        {
+            INFO,
+            WARNING,
+            ERROR
+        }
         private TabControl mainTabs = null!;
         private TabPage tabJarfix = null!;
         private TabPage tabDetected = null!;
@@ -30,7 +36,7 @@ namespace Jarfix.UI
         private CancellationTokenSource? downloadCts;
         private StringBuilder runLog = new StringBuilder();
         private const string MicrosoftJdk21Msi = "https://aka.ms/download-jdk/microsoft-jdk-21-windows-x64.msi";
-        private const string CurrentVersion = "v1.0.1";
+        private const string CurrentVersion = "v1.0.2";
         private const string LatestReleaseUrl = "https://github.com/qMaxXen/Jarfix/releases/latest";
         public MainForm()
         {
@@ -109,25 +115,24 @@ namespace Jarfix.UI
         private async void MainForm_Load(object? sender, EventArgs e)
         {
             mainTabs.SelectedTab = tabJarfix;
-            
-            LogForLog($"Jarfix version: {CurrentVersion}");
-            
+                        
             var (isOutdated, latestVersion) = await CheckForUpdatesAsync();
-            
+
             if (!string.IsNullOrEmpty(latestVersion))
             {
                 if (isOutdated)
                 {
-                    LogForLog($"Update available: {latestVersion} (Current: {CurrentVersion})");
+                    LogForLog($"Jarfix version: {CurrentVersion} (Update available: {latestVersion})", LogLevel.WARNING);
                 }
                 else
                 {
-                    LogForLog("Using the latest version.");
+                    LogForLog($"Jarfix version: {CurrentVersion} (latest version)");
                 }
             }
             else
             {
-                LogForLog("Could not check for updates.");
+                LogForLog($"Jarfix version: {CurrentVersion}");
+                LogForLog($"Could not check for updates", LogLevel.WARNING);
             }
             
             if (isOutdated)
@@ -152,7 +157,7 @@ namespace Jarfix.UI
                     }
                     catch (Exception ex)
                     {
-                        LogForLog($"Failed to open update URL: {ex.Message}");
+                        LogForLog($"Failed to open update URL: {ex.Message}", LogLevel.ERROR);
                     }
                     Application.Exit();
                     return;
@@ -260,14 +265,26 @@ namespace Jarfix.UI
             jarfixInfoBox.AppendText(Environment.NewLine);
         }
 
-        private void LogForLog(string message)
+        private void LogForLog(string message, LogLevel level = LogLevel.INFO)
         {
-            var line = $"[{DateTime.Now:HH:mm:ss}] {message}";
-            runLog.AppendLine(line);
+            string levelName = level switch
+            {
+                LogLevel.WARNING => "WARNING",
+                LogLevel.ERROR => "ERROR",
+                _ => "INFO"
+            };
+            
+            string timestamp = DateTime.Now.ToString("HH:mm:ss");
+            
+            var uploadLine = $"[{timestamp}] [main/{levelName}]: {message}";
+            runLog.AppendLine(uploadLine);
+            
+            var displayLine = $"[{timestamp}/{levelName}] {message}";
+            
             if (txtLog.InvokeRequired)
-                txtLog.BeginInvoke((Action)(() => txtLog.AppendText(line + Environment.NewLine)));
+                txtLog.BeginInvoke((Action)(() => txtLog.AppendText(displayLine + Environment.NewLine)));
             else
-                txtLog.AppendText(line + Environment.NewLine);
+                txtLog.AppendText(displayLine + Environment.NewLine);
         }
 
         private async Task RunJarfixFlow()
@@ -298,7 +315,6 @@ namespace Jarfix.UI
                 {
                     InfoWarning("No Java runtime found.");
                     InfoBlankLine();
-                    LogForLog("No Java runtimes detected.");
                 }
 
                 bool onlyOldJava = false;
@@ -334,7 +350,7 @@ namespace Jarfix.UI
                     else
                     {
                         Info("Failed to update the file association. Try running Jarfix as administrator.");
-                        LogForLog("Failed to update association (user-scope).");
+                        LogForLog("Failed to update association (user-scope).", LogLevel.ERROR);
                     }
 
                     await DoDetect();
@@ -362,7 +378,7 @@ namespace Jarfix.UI
                 }
                 else
                 {
-                    LogForLog("User declined download.");
+                    LogForLog("User declined download.", LogLevel.WARNING);
                 }
 
                 LogForLog("Re-detecting runtimes after install attempt.");
@@ -388,7 +404,7 @@ namespace Jarfix.UI
                     else
                     {
                         Info("Installation succeeded, but failed to set file association. Try running Jarfix as administrator.");
-                        LogForLog("Failed to set association after install.");
+                        LogForLog("Failed to set association after install.", LogLevel.ERROR);
                     }
                 }
                 else if (dialogResult == DialogResult.Yes)
@@ -399,12 +415,12 @@ namespace Jarfix.UI
             catch (OperationCanceledException)
             {
                 Info("Operation cancelled by user.");
-                LogForLog("Operation cancelled by user.");
+                LogForLog("Operation cancelled by user.", LogLevel.WARNING);
             }
             catch (Exception ex)
             {
                 Info("An unexpected error occurred. Check the Log tab for details.");
-                LogForLog($"Unexpected error: {ex.Message}");
+                LogForLog($"Unexpected error: {ex.Message}", LogLevel.ERROR);
             }
             finally
             {
@@ -545,7 +561,7 @@ namespace Jarfix.UI
                 if (proc == null)
                 {
                     progressForm.UpdateProgress(-1, "Failed to start installer.");
-                    LogForLog("Failed to start MSI installer process.");
+                    LogForLog("Failed to start MSI installer process.", LogLevel.ERROR);
                     return;
                 }
 
@@ -561,7 +577,7 @@ namespace Jarfix.UI
             catch (OperationCanceledException)
             {
                 progressForm.UpdateProgress(-1, "Download cancelled.");
-                LogForLog("User cancelled download.");
+                LogForLog("User cancelled download.", LogLevel.WARNING);
                 throw;
             }
             catch (Exception ex)
@@ -571,7 +587,7 @@ namespace Jarfix.UI
                     try { File.Delete(tempFile); } catch { }
                 }
                 progressForm.UpdateProgress(-1, "Download/install failed.");
-                LogForLog($"Download or install failed: {ex.Message}");
+                LogForLog($"Download or install failed: {ex.Message}", LogLevel.ERROR);
             }
             finally
             {
@@ -584,10 +600,10 @@ namespace Jarfix.UI
             try
             {
                 btnUploadLog.Enabled = false;
-                var content = txtLog.Text;
+                var content = runLog.ToString();
                 if (string.IsNullOrWhiteSpace(content))
                 {
-                    LogForLog("Upload aborted: no log content.");
+                    LogForLog("Upload aborted: no log content.", LogLevel.WARNING);
                     MessageBox.Show("No log to upload.", "Jarfix", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
@@ -649,7 +665,7 @@ namespace Jarfix.UI
             }
             catch (Exception ex)
             {
-                LogForLog($"Upload error: {ex.Message}");
+                LogForLog($"Upload error: {ex.Message}", LogLevel.ERROR);
                 MessageBox.Show($"Upload failed: {ex.Message}", "Jarfix", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
