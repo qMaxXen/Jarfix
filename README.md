@@ -11,3 +11,8 @@ Go to the [releases](https://github.com/qMaxXen/Jarfix/releases/latest) section 
 
 ## License
 Jarfix is licensed under the MIT license. You can view the full license [here](https://raw.githubusercontent.com/qMaxXen/Jarfix/refs/heads/main/LICENSE).
+
+## Attribution 
+The Jarfix icon is a modified version of Tux, the Linux mascot. 
+Artwork by Larry Ewing, created using The GIMP. 
+Modifications by qMaxXen.
