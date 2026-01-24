@@ -36,7 +36,7 @@ namespace Jarfix.UI
         private CancellationTokenSource? downloadCts;
         private StringBuilder runLog = new StringBuilder();
         private const string MicrosoftJdk21Msi = "https://aka.ms/download-jdk/microsoft-jdk-21-windows-x64.msi";
-        private const string CurrentVersion = "v1.0.2";
+        private const string CurrentVersion = "v1.0.3";
         private const string LatestReleaseUrl = "https://github.com/qMaxXen/Jarfix/releases/latest";
         public MainForm()
         {
@@ -348,6 +348,23 @@ namespace Jarfix.UI
                     LogForLog("Only Java 8 or older detected.");
                 }
 
+                bool has32BitModernJava = false;
+                bool has64BitModernJava = false;
+                if (lastDetected.Count > 0)
+                {
+                    has32BitModernJava = lastDetected.Any(r => r.MajorVersion >= 17 && !r.Is64Bit);
+                    has64BitModernJava = lastDetected.Any(r => r.MajorVersion >= 17 && r.Is64Bit);
+                }
+
+                if (has32BitModernJava && !has64BitModernJava)
+                {
+                    InfoWarning("You have Java 17+ installed, but it's 32-bit.");
+                    InfoWarning("32-bit Java is not recommended. You should use 64-bit Java 17 or higher.");
+                    InfoBlankLine();
+
+                    LogForLog("Java 17+ detected but only in 32-bit version.");
+                }
+
                 bool only32BitJava = false;
                 bool has64BitJava = false;
                 if (lastDetected.Count > 0)
@@ -356,7 +373,7 @@ namespace Jarfix.UI
                     only32BitJava = !has64BitJava;
                 }
 
-                if (only32BitJava)
+                if (only32BitJava && !has32BitModernJava)
                 {
                     InfoWarning("You're using 32-bit Java on a 64-bit system.");
                     InfoWarning("32-bit Java is not recommended. You should use 64-bit Java 17 or higher.");
