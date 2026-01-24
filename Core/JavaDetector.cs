@@ -393,31 +393,57 @@ namespace Jarfix.Core
 
         static int ParseMajorVersion(string text)
         {
-            var m = Regex.Match(text, "version\\s+\"(?<v>[0-9]+(\\.[0-9_]+)*)\"", RegexOptions.IgnoreCase);
+            var m = Regex.Match(text, "version\\s+\"(?<v>[0-9]+(\\.[0-9_-]+)*)\"", RegexOptions.IgnoreCase);
             if (m.Success)
             {
                 var v = m.Groups["v"].Value;
                 if (v.StartsWith("1."))
                 {
                     var parts = v.Split('.');
-                    if (parts.Length >= 2 && int.TryParse(parts[1].Split('_')[0], out var maj))
-                        return maj;
+                    if (parts.Length >= 2)
+                    {
+                        var majorPart = parts[1].Split('_', '-')[0];
+                        if (int.TryParse(majorPart, out var maj))
+                            return maj;
+                    }
                 }
                 else
                 {
                     var parts = v.Split('.');
-                    if (parts.Length >= 1 && int.TryParse(parts[0], out var maj))
+                    if (parts.Length >= 1)
+                    {
+                        var majorPart = parts[0].Split('_', '-')[0];
+                        if (int.TryParse(majorPart, out var maj))
+                            return maj;
+                    }
+                }
+            }
+
+            m = Regex.Match(text, "openjdk\\s+version\\s+\"(?<v>[0-9]+(\\.[0-9_-]+)*)\"", RegexOptions.IgnoreCase);
+            if (m.Success)
+            {
+                var v = m.Groups["v"].Value;
+                if (v.StartsWith("1."))
+                {
+                    var parts = v.Split('.');
+                    if (parts.Length >= 2)
+                    {
+                        var majorPart = parts[1].Split('_', '-')[0];
+                        if (int.TryParse(majorPart, out var maj))
+                            return maj;
+                    }
+                }
+                else
+                {
+                    var majorPart = v.Split('.', '_', '-')[0];
+                    if (int.TryParse(majorPart, out var maj))
                         return maj;
                 }
             }
 
-            m = Regex.Match(text, "openjdk\\s+(?<v>[0-9]+(\\.[0-9]+)*)", RegexOptions.IgnoreCase);
-            if (m.Success && int.TryParse(m.Groups["v"].Value.Split('.')[0], out var v2))
+            m = Regex.Match(text, "openjdk\\s+(?<v>[0-9]+)", RegexOptions.IgnoreCase);
+            if (m.Success && int.TryParse(m.Groups["v"].Value, out var v2))
                 return v2;
-
-            m = Regex.Match(text, "([0-9]{2})\\.[0-9]+\\.[0-9]+");
-            if (m.Success && int.TryParse(m.Groups[1].Value, out var v3))
-                return v3;
 
             return 0;
         }
