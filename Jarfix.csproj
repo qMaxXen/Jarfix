@@ -12,5 +12,9 @@
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <PublishTrimmed>false</PublishTrimmed>
+    <ApplicationIcon>Assets\Jarfix.ico</ApplicationIcon> 
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\Jarfix.ico" />
+  </ItemGroup>
 </Project>

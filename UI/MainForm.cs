@@ -50,6 +50,20 @@ namespace Jarfix.UI
             Text = "Jarfix";
             Width = 680;
             Height = 420;
+
+            try
+            {
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                using var stream = assembly.GetManifestResourceStream("Jarfix.Assets.Jarfix.ico");
+                if (stream != null)
+                {
+                    this.Icon = new System.Drawing.Icon(stream);
+                }
+            }
+            catch
+            {
+            }
+
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
