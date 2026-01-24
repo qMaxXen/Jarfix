@@ -380,14 +380,22 @@ namespace Jarfix.Core
         }
         static string ParseVendor(string text, string path)
         {
-            var lower = (text + " " + path).ToLowerInvariant();
-            if (lower.Contains("azul") || lower.Contains("zulu")) return "Azul";
-            if (lower.Contains("temurin") || lower.Contains("adoptium") || lower.Contains("adoptopenjdk")) return "Adoptium";
-            if (lower.Contains("microsoft")) return "Microsoft";
-            if (lower.Contains("oracle")) return "Oracle";
-            if (lower.Contains("corretto")) return "Corretto";
-            if (lower.Contains("bellsoft") || lower.Contains("liberica")) return "BellSoft";
-            if (lower.Contains("amazon")) return "Amazon";
+            var pathLower = path.ToLowerInvariant();
+            var textLower = text.ToLowerInvariant();
+            
+            if (pathLower.Contains("azul") || pathLower.Contains("zulu")) return "Azul";
+            if (pathLower.Contains("temurin") || pathLower.Contains("adoptium") || pathLower.Contains("adoptopenjdk")) return "Adoptium";
+            if (pathLower.Contains("microsoft")) return "Microsoft";
+            if (pathLower.Contains("oracle")) return "Oracle";
+            if (pathLower.Contains("corretto")) return "Corretto";
+            if (pathLower.Contains("bellsoft") || pathLower.Contains("liberica")) return "BellSoft";
+            if (pathLower.Contains("amazon")) return "Amazon";            
+            if (textLower.Contains("azul") || textLower.Contains("zulu")) return "Azul";
+            if (textLower.Contains("temurin") || textLower.Contains("adoptium") || textLower.Contains("adoptopenjdk")) return "Adoptium";
+            if (textLower.Contains("oracle")) return "Oracle";
+            if (textLower.Contains("corretto")) return "Corretto";
+            if (textLower.Contains("bellsoft") || textLower.Contains("liberica")) return "BellSoft";
+            
             return "Unknown";
         }
 
