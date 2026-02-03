@@ -36,7 +36,7 @@ namespace Jarfix.UI
         private CancellationTokenSource? downloadCts;
         private StringBuilder runLog = new StringBuilder();
         private const string MicrosoftJdk21Msi = "https://aka.ms/download-jdk/microsoft-jdk-21-windows-x64.msi";
-        private const string CurrentVersion = "v1.0.3";
+        private const string CurrentVersion = "v1.0.4";
         private const string LatestReleaseUrl = "https://github.com/qMaxXen/Jarfix/releases/latest";
         public MainForm()
         {
