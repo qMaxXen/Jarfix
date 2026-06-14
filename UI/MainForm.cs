@@ -48,8 +48,9 @@ namespace Jarfix.UI
         private void InitializeComponent()
         {
             Text = "Jarfix";
-            Width = 680;
-            Height = 420;
+            ClientSize = new System.Drawing.Size(664, 392);
+            AutoScaleMode = AutoScaleMode.Dpi;
+            AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
 
             try
             {
@@ -71,13 +72,19 @@ namespace Jarfix.UI
             mainTabs = new TabControl { Dock = DockStyle.Fill };
 
             tabJarfix = new TabPage("Jarfix");
+            var jarfixLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                Padding = new Padding(8)
+            };
+            jarfixLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            jarfixLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             jarfixInfoBox = new RichTextBox
             {
-                Left = 12,
-                Top = 12,
-                Width = 640,
-                Height = 300,
+                Dock = DockStyle.Fill,
                 ReadOnly = true,
                 ScrollBars = RichTextBoxScrollBars.Vertical,
                 WordWrap = true,
@@ -92,20 +99,26 @@ namespace Jarfix.UI
             jarfixInfoBox.MouseEnter += (s, e) => jarfixInfoBox.Cursor = Cursors.Default;
             jarfixInfoBox.MouseLeave += (s, e) => jarfixInfoBox.Cursor = Cursors.Default;
 
-            tabJarfix.Controls.Add(jarfixInfoBox);
-
             btnRefresh = new Button
             {
-                Left = 12,
-                Top = jarfixInfoBox.Bottom + 8, 
-                Width = 120,
-                Text = "Refresh"
+                Text = "Refresh",
+                Margin = new Padding(0, 6, 0, 4),
+                AutoSize = true
             };
             btnRefresh.Click += async (s, e) => await RunJarfixFlow();
-            tabJarfix.Controls.Add(btnRefresh);
+
+            jarfixLayout.Controls.Add(jarfixInfoBox, 0, 0);
+            jarfixLayout.Controls.Add(btnRefresh, 0, 1);
+            tabJarfix.Controls.Add(jarfixLayout);
 
             tabDetected = new TabPage("Installed Java Runtimes");
-            lvDetected = new ListView { Left = 8, Top = 8, Width = 652, Height = 340, View = View.Details, FullRowSelect = true };
+            tabDetected.Padding = new Padding(8);
+            lvDetected = new ListView
+            {
+                Dock = DockStyle.Fill,
+                View = View.Details,
+                FullRowSelect = true
+            };
             lvDetected.Columns.Add("Vendor", -2);
             lvDetected.Columns.Add("Version", -2);
             lvDetected.Columns.Add("Architecture", -2);
@@ -113,11 +126,35 @@ namespace Jarfix.UI
             tabDetected.Controls.Add(lvDetected);
 
             tabLog = new TabPage("Log");
-            txtLog = new TextBox { Left = 8, Top = 8, Width = 652, Height = 300, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Both, WordWrap = false };
-            btnUploadLog = new Button { Left = 12, Top = txtLog.Bottom + 13, Width = 120, Text = "Upload log" };
+            var logLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                Padding = new Padding(8)
+            };
+            logLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            logLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            txtLog = new TextBox
+            {
+                Dock = DockStyle.Fill,
+                Multiline = true,
+                ReadOnly = true,
+                ScrollBars = ScrollBars.Both,
+                WordWrap = false
+            };
+            btnUploadLog = new Button
+            {
+                Text = "Upload log",
+                Margin = new Padding(0, 6, 0, 4),
+                AutoSize = true
+            };
             btnUploadLog.Click += async (s, e) => await UploadLogClicked();
-            tabLog.Controls.Add(txtLog);
-            tabLog.Controls.Add(btnUploadLog);
+
+            logLayout.Controls.Add(txtLog, 0, 0);
+            logLayout.Controls.Add(btnUploadLog, 0, 1);
+            tabLog.Controls.Add(logLayout);
 
             mainTabs.TabPages.Add(tabJarfix);
             mainTabs.TabPages.Add(tabDetected);
@@ -257,16 +294,6 @@ namespace Jarfix.UI
                 return;
             }
             jarfixInfoBox.AppendText(message + Environment.NewLine);
-        }
-        private void ResizeJarfixInfoBoxToContent()
-        {
-            int charIndex = jarfixInfoBox.TextLength;
-            if (charIndex == 0) return;
-
-            var lastCharPos = jarfixInfoBox.GetPositionFromCharIndex(charIndex - 1);
-            int neededHeight = lastCharPos.Y + jarfixInfoBox.Font.Height + 16;
-
-            jarfixInfoBox.Height = Math.Min(neededHeight, 280);
         }
 
         private void InfoBlankLine()
