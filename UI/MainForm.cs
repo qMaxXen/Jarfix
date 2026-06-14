@@ -28,6 +28,7 @@ namespace Jarfix.UI
         private TabPage tabLog = null!;
 
         private Button btnRefresh = null!;
+        private Button btnDownloadJava = null!;
         private RichTextBox jarfixInfoBox = null!; 
         private ListView lvDetected = null!;
         private TextBox txtLog = null!;
@@ -107,8 +108,86 @@ namespace Jarfix.UI
             };
             btnRefresh.Click += async (s, e) => await RunJarfixFlow();
 
+            btnDownloadJava = new Button
+            {
+                Text = "Download && Install Java 21",
+                Margin = new Padding(8, 6, 0, 4),
+                AutoSize = true,
+                Visible = false
+            };
+            btnDownloadJava.Click += async (s, e) =>
+            {
+                btnDownloadJava.Visible = false;
+                bool success = false;
+                try
+                {
+                    using var progressForm = new DownloadProgressForm();
+                    progressForm.StartPosition = FormStartPosition.CenterParent;
+                    progressForm.Show(this);
+                    await DownloadAndInstallJdk21(MicrosoftJdk21Msi, progressForm);
+                    if (!progressForm.IsDisposed)
+                    {
+                        try { progressForm.Close(); } catch { }
+                    }
+                    LogForLog("Re-detecting runtimes after button download.");
+                    await DoDetect();
+                    UpdateDetectedTab();
+                    JavaRuntime? afterRec = SelectPreferredRuntime(lastDetected);
+                    if (afterRec != null && afterRec.MajorVersion >= 17)
+                    {
+                        jarfixInfoBox.Clear();
+                        var ok = JarAssociationFixer.SetJarAssociationUserScope(afterRec);
+                        if (ok)
+                        {
+                            Info("Successfully updated the .jar file type. Your .jar files should now open with Java " + afterRec.MajorVersion + ".\n");
+                            Info("Java runtime environment: \n" + afterRec.JavawPath);
+                            LogForLog("Association updated after button install.");
+                        }
+                        else
+                        {
+                            Info("Installation succeeded, but failed to set file association. Try running Jarfix as administrator.");
+                            LogForLog("Failed to set association after button install.", LogLevel.ERROR);
+                        }
+                    }
+                    else
+                    {
+                        Info("Installation may not have completed successfully. Please check the Log tab for details.");
+                        Info("You can try again by clicking the button \"Download & Install Java 21\".");
+                        btnDownloadJava.Visible = true;
+                    }
+                    success = true;
+                }
+                catch (OperationCanceledException)
+                {
+                    Info("Operation cancelled by user.");
+                    LogForLog("Button download cancelled by user.", LogLevel.WARNING);
+                }
+                catch (Exception ex)
+                {
+                    Info("An unexpected error occurred during installation. Check the Log tab.");
+                    LogForLog($"Button download unexpected error: {ex.Message}", LogLevel.ERROR);
+                }
+                finally
+                {
+                    if (!success)
+                        btnDownloadJava.Visible = true;
+                }
+            };
+
             jarfixLayout.Controls.Add(jarfixInfoBox, 0, 0);
-            jarfixLayout.Controls.Add(btnRefresh, 0, 1);
+
+            var bottomPanel = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                AutoSize = true,
+                Margin = new Padding(0)
+            };
+            bottomPanel.Controls.Add(btnRefresh);
+            bottomPanel.Controls.Add(btnDownloadJava);
+
+            jarfixLayout.Controls.Add(bottomPanel, 0, 1);
             tabJarfix.Controls.Add(jarfixLayout);
 
             tabDetected = new TabPage("Installed Java Runtimes");
@@ -334,6 +413,7 @@ namespace Jarfix.UI
             {
                 SetBusy(true);
                 jarfixInfoBox.Clear();
+                btnDownloadJava.Visible = false;
 
                 Info("Looking for installed Java runtimes on your computer...");
                 LogForLog("Starting detection of installed Java runtimes...");
@@ -418,7 +498,7 @@ namespace Jarfix.UI
                     
                     if (ok)
                     {
-                        Info("Successfully updated the .jar suffix. Your .jar files should now open with Java " + recommended.MajorVersion + "."  + "\n" );
+                        Info("Successfully updated the .jar file type. Your .jar files should now open with Java " + recommended.MajorVersion + "."  + "\n" );
                         Info("Java runtime environment: "  + "\n" + recommended.JavawPath);
                         LogForLog("Association updated (user-scope).");
                     }
@@ -455,6 +535,9 @@ namespace Jarfix.UI
                 else
                 {
                     LogForLog("User declined download.", LogLevel.WARNING);
+                    Info("You declined the automatic download and install.");
+                    Info("You can manually download Java 17+, or click the button \"Download & Install Java 21\" below to let Jarfix automatically download and install it.");
+                    btnDownloadJava.Visible = true;
                 }
 
                 LogForLog("Re-detecting runtimes after install attempt.");
@@ -473,7 +556,7 @@ namespace Jarfix.UI
                     
                     if (ok2)
                     {
-                        Info("Successfully updated the .jar suffix. Your .jar files are now configured to run with Java " + afterRec.MajorVersion + "." + "\n");
+                        Info("Successfully updated the .jar file type. Your .jar files are now configured to run with Java " + afterRec.MajorVersion + "." + "\n");
                         Info("Java runtime environment: " + "\n" + afterRec.JavawPath);
                         LogForLog("Association updated after install.");
                     }
@@ -486,12 +569,9 @@ namespace Jarfix.UI
                 else if (dialogResult == DialogResult.Yes)
                 {
                     Info("Installation may not have completed successfully. Please check the Log tab for details.");
+                    Info("You can try again by clicking the button \"Download & Install Java 21\".");
+                    btnDownloadJava.Visible = true;
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                Info("Operation cancelled by user.");
-                LogForLog("Operation cancelled by user.", LogLevel.WARNING);
             }
             catch (Exception ex)
             {
@@ -577,7 +657,7 @@ namespace Jarfix.UI
             {
                 progressForm.SetCancelable(() => downloadCts?.Cancel());
                 progressForm.UpdateProgress(-1, "Starting download...");
-                LogForLog("Beginning download of Java 21 installer...");
+                LogForLog("Beginning download of Java 21 installer: " + MicrosoftJdk21Msi);
 
                 using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
                 using var response = await http.GetAsync(msiUrl, HttpCompletionOption.ResponseHeadersRead, token);
@@ -650,7 +730,6 @@ namespace Jarfix.UI
             {
                 progressForm.UpdateProgress(-1, "Download cancelled.");
                 LogForLog("User cancelled download.", LogLevel.WARNING);
-                throw;
             }
             catch (Exception ex)
             {          
