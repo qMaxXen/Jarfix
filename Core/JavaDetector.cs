@@ -331,6 +331,9 @@ namespace Jarfix.Core
                 javaExePath = Path.GetFullPath(javaExePath);
                 if (!File.Exists(javaExePath)) return null;
 
+                if (javaExePath.IndexOf(@"Oracle\Java\javapath", StringComparison.OrdinalIgnoreCase) >= 0)
+                    return null;
+
                 var psi = new ProcessStartInfo
                 {
                     FileName = javaExePath,
