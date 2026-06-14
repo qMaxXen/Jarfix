@@ -434,10 +434,11 @@ namespace Jarfix.UI
                 }
                             
                 var dialogResult = MessageBox.Show(
-                    "No suitable Java runtime (17 or higher) was found. Would you like to download and install Java 21?",
-                    "Java installation needed",
+                    "No suitable Java runtime (Java 17 or higher) was found.\n\nClick Yes to automatically download and install Java 21 (recommended).",
+                    "Java Installation Required",
                     MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Question
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button1
                 );
 
                 if (dialogResult == DialogResult.Yes)
