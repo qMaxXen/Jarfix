@@ -831,11 +831,16 @@ namespace Jarfix.UI
             private Label lbl = null!;
             private Button btnCancel = null!;
             private Action? cancelAction;
+            private long _lastProgressUiUpdateTick;
+            private int _lastRenderedPercent = int.MinValue;
+            private string? _lastRenderedStatus;
+            private const int ProgressUiUpdateIntervalMs = 100;
 
             public DownloadProgressForm()
             {
-                Width = 520;
-                Height = 140;
+                ClientSize = new System.Drawing.Size(504, 78);
+                AutoScaleMode = AutoScaleMode.Dpi;
+                AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
                 StartPosition = FormStartPosition.CenterParent;
                 Text = "Downloading Java 21";
                 FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -843,19 +848,48 @@ namespace Jarfix.UI
                 MinimizeBox = false;
                 ShowInTaskbar = false;
 
-                lbl = new Label { Left = 12, Top = 12, Width = 480, Height = 28, Text = "Starting..." };
-                pb = new ProgressBar { Left = 12, Top = 44, Width = 480, Height = 20, Minimum = 0, Maximum = 100, Value = 0 };
-                btnCancel = new Button { Left = 12, Top = 70, Width = 100, Text = "Cancel" };
-                btnCancel.Click += (s, e) =>
+                var layout = new TableLayoutPanel
                 {
-                    btnCancel.Enabled = false;
-                    cancelAction?.Invoke();
-                    lbl.Text = "Cancelling...";
+                    Dock = DockStyle.Fill,
+                    ColumnCount = 1,
+                    RowCount = 3,
+                    Padding = new Padding(12)
+                };
+                layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+                lbl = new Label
+                {
+                    Dock = DockStyle.Fill,
+                    Text = "Starting...",
+                    AutoSize = false,
+                    Height = 28
                 };
 
-                Controls.Add(lbl);
-                Controls.Add(pb);
-                Controls.Add(btnCancel);
+                pb = new ProgressBar
+                {
+                    Dock = DockStyle.Fill,
+                    Minimum = 0,
+                    Maximum = 100,
+                    Value = 0,
+                    Height = 20,
+                    Margin = new Padding(0, 4, 0, 4)
+                };
+
+                btnCancel = new Button
+                {
+                    Text = "Cancel",
+                    AutoSize = true,
+                    Margin = new Padding(0, 4, 0, 0)
+                };
+                btnCancel.Click += (s, e) => TriggerCancel();
+                FormClosing += (s, e) => TriggerCancel();
+
+                layout.Controls.Add(lbl, 0, 0);
+                layout.Controls.Add(pb, 0, 1);
+                layout.Controls.Add(btnCancel, 0, 2);
+                Controls.Add(layout);
             }
 
             public void SetCancelable(Action onCancel)
@@ -863,25 +897,54 @@ namespace Jarfix.UI
                 cancelAction = onCancel;
             }
 
+            private void TriggerCancel()
+            {
+                btnCancel.Enabled = false;
+                cancelAction?.Invoke();
+                lbl.Text = "Cancelling...";
+            }
+
             public void UpdateProgress(int percent, string status)
             {
                 if (IsDisposed) return;
+
                 if (InvokeRequired)
                 {
                     BeginInvoke((Action)(() => UpdateProgress(percent, status)));
                     return;
                 }
+
+                long now = Environment.TickCount64;
+                bool sameAsLast =
+                    percent == _lastRenderedPercent &&
+                    string.Equals(status, _lastRenderedStatus, StringComparison.Ordinal);
+
+                if (sameAsLast || now - _lastProgressUiUpdateTick < ProgressUiUpdateIntervalMs)
+                {
+                    return;
+                }
+
                 lbl.Text = status;
+
                 if (percent >= 0)
                 {
-                    pb.Style = ProgressBarStyle.Continuous;
-                    pb.Value = Math.Max(0, Math.Min(100, percent));
+                    int clamped = Math.Max(0, Math.Min(100, percent));
+
+                    if (pb.Style != ProgressBarStyle.Continuous)
+                        pb.Style = ProgressBarStyle.Continuous;
+
+                    if (pb.Value != clamped)
+                        pb.Value = clamped;
                 }
                 else
                 {
-                    pb.Style = ProgressBarStyle.Marquee;
+                    if (pb.Style != ProgressBarStyle.Marquee)
+                        pb.Style = ProgressBarStyle.Marquee;
                 }
-                Application.DoEvents();
+
+                _lastRenderedPercent = percent;
+                _lastRenderedStatus = status;
+                _lastProgressUiUpdateTick = now;
             }
         }
     }
