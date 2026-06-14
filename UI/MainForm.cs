@@ -37,7 +37,7 @@ namespace Jarfix.UI
         private CancellationTokenSource? downloadCts;
         private StringBuilder runLog = new StringBuilder();
         private const string MicrosoftJdk21Msi = "https://aka.ms/download-jdk/microsoft-jdk-21-windows-x64.msi";
-        private const string CurrentVersion = "v1.0.4";
+        private const string CurrentVersion = "v1.0.5";
         private const string LatestReleaseUrl = "https://github.com/qMaxXen/Jarfix/releases/latest";
         public MainForm()
         {
@@ -535,7 +535,7 @@ namespace Jarfix.UI
                 else
                 {
                     LogForLog("User declined download.", LogLevel.WARNING);
-                    Info("You declined the automatic download and install.");
+                    Info("You declined the automatic download and install of java 21.");
                     Info("You can manually download Java 17+, or click the button \"Download & Install Java 21\" below to let Jarfix automatically download and install it.");
                     btnDownloadJava.Visible = true;
                 }
@@ -838,9 +838,9 @@ namespace Jarfix.UI
 
             public DownloadProgressForm()
             {
-                ClientSize = new System.Drawing.Size(504, 78);
                 AutoScaleMode = AutoScaleMode.Dpi;
                 AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+                ClientSize = new System.Drawing.Size(504, 114);
                 StartPosition = FormStartPosition.CenterParent;
                 Text = "Downloading Java 21";
                 FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -907,7 +907,6 @@ namespace Jarfix.UI
             public void UpdateProgress(int percent, string status)
             {
                 if (IsDisposed) return;
-
                 if (InvokeRequired)
                 {
                     BeginInvoke((Action)(() => UpdateProgress(percent, status)));
