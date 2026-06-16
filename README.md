@@ -19,7 +19,7 @@ This program is similar to [Johann Löfflmann's original Jarfix](https://johann.
 Go to the [releases](https://github.com/qMaxXen/Jarfix/releases/latest) section and download `Jarfix.exe`.
 
 ## Requirements
-- Windows 10/11
+- Windows 10/11 (x64)
 
 ## License
 Jarfix is licensed under the MIT license. You can view the full license [here](https://github.com/qMaxXen/Jarfix/blob/main/LICENSE).
